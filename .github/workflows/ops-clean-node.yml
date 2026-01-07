@@ -52,4 +52,4 @@ jobs:
             export CONFIRM="I_UNDERSTAND"
           fi
 
-          sudo -E bash scripts/clean_node.sh
+          sudo -n /usr/local/sbin/hz-clean-node
