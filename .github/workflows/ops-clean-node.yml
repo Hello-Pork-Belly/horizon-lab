@@ -51,5 +51,5 @@ jobs:
             export CLEAN_APPLY=1
             export CONFIRM="I_UNDERSTAND"
           fi
-
-          sudo -n /usr/local/sbin/hz-clean-node
+          
+          sudo -n -E /usr/local/sbin/hz-clean-node
