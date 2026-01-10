@@ -114,7 +114,7 @@ clean_docker_all() {
     return 0
   fi
 
-  log "Docker cleanup: remove containers + prune images/networks (and volumes if enabled)..."
+  log "Docker cleanup: remove containers and prune images/networks (and volumes if enabled)."
   run_cmd "docker ps -aq | xargs -r docker rm -f"
   if is_truthy "$PRUNE_VOLUMES"; then
     run_cmd "docker system prune -af --volumes"
@@ -160,7 +160,11 @@ post_report() {
 }
 
 main() {
-  need_root
+  if [[ "$MODE" == "APPLY" ]]; then
+    need_root
+  else
+    log "DRY-RUN mode: root privileges not required."
+  fi
 
   preflight_report
 
