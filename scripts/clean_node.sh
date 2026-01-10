@@ -12,6 +12,8 @@ set -euo pipefail
 # - never touches tailscale
 # - never removes github runner directories unless you explicitly add it later
 # - backups web dirs before delete (tar.gz)
+# noop
+
 
 is_truthy() {
   local value
