@@ -15,14 +15,16 @@ set -euo pipefail
 # noop
 
 
-is_truthy() {
+parse_bool() {
   local value
   value="${1:-}"
   value="${value//[[:space:]]/}"
   value="${value,,}"
   case "$value" in
-    true|1|yes|on) return 0 ;;
-    *) return 1 ;;
+    "") echo "" ;;
+    true|1|yes|on) echo "true" ;;
+    false|0|no|off) echo "false" ;;
+    *) echo "invalid" ;;
   esac
 }
 
@@ -33,7 +35,24 @@ APPLY_VALUE="${APPLY:-${CLEAN_APPLY:-}}"
 PRUNE_VOLUMES_VALUE="${PRUNE_VOLUMES:-}"
 CLEAN_WEB_VALUE="${CLEAN_WEB:-}"
 
-if is_truthy "$APPLY_VALUE"; then
+APPLY_STATE="$(parse_bool "$APPLY_VALUE")"
+PRUNE_STATE="$(parse_bool "$PRUNE_VOLUMES_VALUE")"
+CLEAN_WEB_STATE="$(parse_bool "$CLEAN_WEB_VALUE")"
+
+if [[ "$APPLY_STATE" == "invalid" ]]; then
+  log "[WARN] Invalid APPLY value '$APPLY_VALUE'; defaulting to DRY-RUN."
+  APPLY_STATE="false"
+fi
+if [[ "$PRUNE_STATE" == "invalid" ]]; then
+  log "[WARN] Invalid PRUNE_VOLUMES value '$PRUNE_VOLUMES_VALUE'; defaulting to NO."
+  PRUNE_STATE="false"
+fi
+if [[ "$CLEAN_WEB_STATE" == "invalid" ]]; then
+  log "[WARN] Invalid CLEAN_WEB value '$CLEAN_WEB_VALUE'; defaulting to NO."
+  CLEAN_WEB_STATE="false"
+fi
+
+if [[ "$APPLY_STATE" == "true" ]]; then
   APPLY_ENABLED=true
   MODE="APPLY"
 else
@@ -41,17 +60,23 @@ else
   MODE="DRY-RUN"
 fi
 
-if is_truthy "$PRUNE_VOLUMES_VALUE"; then
+if [[ "$PRUNE_STATE" == "true" && "$APPLY_ENABLED" == "true" ]]; then
   PRUNE_VOLUMES_ENABLED=true
   PRUNE_LABEL="YES"
+elif [[ "$PRUNE_STATE" == "true" ]]; then
+  PRUNE_VOLUMES_ENABLED=false
+  PRUNE_LABEL="IGNORED (requires APPLY)"
 else
   PRUNE_VOLUMES_ENABLED=false
   PRUNE_LABEL="NO"
 fi
 
-if is_truthy "$CLEAN_WEB_VALUE"; then
+if [[ "$CLEAN_WEB_STATE" == "true" && "$APPLY_ENABLED" == "true" ]]; then
   CLEAN_WEB_ENABLED=true
   CLEAN_WEB_LABEL="YES"
+elif [[ "$CLEAN_WEB_STATE" == "true" ]]; then
+  CLEAN_WEB_ENABLED=false
+  CLEAN_WEB_LABEL="IGNORED (requires APPLY)"
 else
   CLEAN_WEB_ENABLED=false
   CLEAN_WEB_LABEL="NO"
@@ -60,6 +85,10 @@ fi
 echo "=== MODE: [$MODE] === Configuration: Prune Volumes: [$PRUNE_LABEL], Clean Web: [$CLEAN_WEB_LABEL]"
 
 run_cmd() {
+  if [[ "$#" -eq 0 ]]; then
+    log "[WARN] Empty command skipped."
+    return 0
+  fi
   if [[ "$APPLY_ENABLED" == "true" ]]; then
     log "[EXEC] $*"
     eval "$*"
