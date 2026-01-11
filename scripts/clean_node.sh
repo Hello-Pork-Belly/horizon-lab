@@ -34,27 +34,33 @@ PRUNE_VOLUMES_VALUE="${PRUNE_VOLUMES:-}"
 CLEAN_WEB_VALUE="${CLEAN_WEB:-}"
 
 if is_truthy "$APPLY_VALUE"; then
+  APPLY_ENABLED=true
   MODE="APPLY"
 else
+  APPLY_ENABLED=false
   MODE="DRY-RUN"
 fi
 
 if is_truthy "$PRUNE_VOLUMES_VALUE"; then
+  PRUNE_VOLUMES_ENABLED=true
   PRUNE_LABEL="YES"
 else
+  PRUNE_VOLUMES_ENABLED=false
   PRUNE_LABEL="NO"
 fi
 
 if is_truthy "$CLEAN_WEB_VALUE"; then
+  CLEAN_WEB_ENABLED=true
   CLEAN_WEB_LABEL="YES"
 else
+  CLEAN_WEB_ENABLED=false
   CLEAN_WEB_LABEL="NO"
 fi
 
 echo "=== MODE: [$MODE] === Configuration: Prune Volumes: [$PRUNE_LABEL], Clean Web: [$CLEAN_WEB_LABEL]"
 
 run_cmd() {
-  if [[ "$MODE" == "APPLY" ]]; then
+  if [[ "$APPLY_ENABLED" == "true" ]]; then
     log "[EXEC] $*"
     eval "$*"
   else
@@ -90,7 +96,7 @@ clean_docker_all() {
 
   log "Docker cleanup: remove containers and prune images/networks (and volumes if enabled)."
   run_cmd "docker ps -aq | xargs -r docker rm -f"
-  if is_truthy "$PRUNE_VOLUMES_VALUE"; then
+  if [[ "$PRUNE_VOLUMES_ENABLED" == "true" ]]; then
     run_cmd "docker system prune -af --volumes"
   else
     run_cmd "docker system prune -af"
@@ -147,7 +153,7 @@ main() {
   preflight_report
 
   clean_docker_all
-  if is_truthy "$CLEAN_WEB_VALUE"; then backup_and_remove_web; fi
+  if [[ "$CLEAN_WEB_ENABLED" == "true" ]]; then backup_and_remove_web; fi
 
   post_report
 
