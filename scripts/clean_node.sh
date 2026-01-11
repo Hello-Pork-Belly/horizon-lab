@@ -15,25 +15,38 @@ set -euo pipefail
 # noop
 
 
-is_truthy() {
+parse_bool() {
   local value
   value="${1:-}"
   value="${value//[[:space:]]/}"
   value="${value,,}"
+  if [[ -z "$value" ]]; then
+    echo ""
+    return 0
+  fi
+
   case "$value" in
-    true|1|yes|on) return 0 ;;
-    *) return 1 ;;
+    true|1|yes|on)
+      echo "true"
+      ;;
+    false|0|no|off)
+      echo "false"
+      ;;
+    *)
+      log "ERROR: invalid boolean value: '$1' (expected true/false)."
+      exit 1
+      ;;
   esac
 }
 
 ts() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 log() { echo "[$(ts)] $*"; }
 
-APPLY_VALUE="${APPLY:-${CLEAN_APPLY:-}}"
-PRUNE_VOLUMES_VALUE="${PRUNE_VOLUMES:-}"
-CLEAN_WEB_VALUE="${CLEAN_WEB:-}"
+APPLY_VALUE="$(parse_bool "${APPLY:-${CLEAN_APPLY:-}}")"
+PRUNE_VOLUMES_VALUE="$(parse_bool "${PRUNE_VOLUMES:-}")"
+CLEAN_WEB_VALUE="$(parse_bool "${CLEAN_WEB:-}")"
 
-if is_truthy "$APPLY_VALUE"; then
+if [[ "$APPLY_VALUE" == "true" ]]; then
   APPLY_ENABLED=true
   MODE="APPLY"
 else
@@ -41,7 +54,7 @@ else
   MODE="DRY-RUN"
 fi
 
-if is_truthy "$PRUNE_VOLUMES_VALUE"; then
+if [[ "$PRUNE_VOLUMES_VALUE" == "true" ]]; then
   PRUNE_VOLUMES_ENABLED=true
   PRUNE_LABEL="YES"
 else
@@ -49,7 +62,7 @@ else
   PRUNE_LABEL="NO"
 fi
 
-if is_truthy "$CLEAN_WEB_VALUE"; then
+if [[ "$CLEAN_WEB_VALUE" == "true" ]]; then
   CLEAN_WEB_ENABLED=true
   CLEAN_WEB_LABEL="YES"
 else
@@ -57,10 +70,24 @@ else
   CLEAN_WEB_LABEL="NO"
 fi
 
+if [[ "$APPLY_ENABLED" != "true" ]]; then
+  if [[ "$PRUNE_VOLUMES_ENABLED" == "true" || "$CLEAN_WEB_ENABLED" == "true" ]]; then
+    log "DRY-RUN: ignoring PRUNE_VOLUMES/CLEAN_WEB flags until APPLY=true."
+  fi
+  PRUNE_VOLUMES_ENABLED=false
+  CLEAN_WEB_ENABLED=false
+  PRUNE_LABEL="NO"
+  CLEAN_WEB_LABEL="NO"
+fi
+
 echo "=== MODE: [$MODE] === Configuration: Prune Volumes: [$PRUNE_LABEL], Clean Web: [$CLEAN_WEB_LABEL]"
 
 run_cmd() {
   if [[ "$APPLY_ENABLED" == "true" ]]; then
+    if [[ "$#" -eq 0 ]]; then
+      log "[WARN] Empty command skipped."
+      return 0
+    fi
     log "[EXEC] $*"
     eval "$*"
   else
