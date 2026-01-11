@@ -26,6 +26,13 @@ operated via Tailscale mesh and GitHub Actions self-hosted runners.
 - `scripts/`            Idempotent shell scripts (safe defaults)
 - `.github/workflows/`  CI + manual_dispatch ops workflows
 
+## Docs
+- [GPT Project Instructions](docs/GPT-PROJECT-INSTRUCTIONS.md)
+- [Baseline](docs/BASELINE.md)
+- [Audit Checklist](docs/AUDIT-CHECKLIST.md)
+- [Release Policy](docs/RELEASE-POLICY.md)
+- [LOMP Lite Scope](docs/LOMP-LITE-SCOPE.md)
+
 ## Quick start
 1. Add your nodes to Tailscale (mesh only; no public SSH).
 2. Install/attach GitHub runner to the hub node.
