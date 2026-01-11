@@ -21,7 +21,7 @@ parse_bool() {
   value="${value//[[:space:]]/}"
   value="${value,,}"
   case "$value" in
-    "") echo "" ;;
+    "") echo "false" ;;
     true|1|yes|on) echo "true" ;;
     false|0|no|off) echo "false" ;;
     *) echo "invalid" ;;
@@ -60,40 +60,42 @@ else
   MODE="DRY-RUN"
 fi
 
-if [[ "$PRUNE_STATE" == "true" && "$APPLY_ENABLED" == "true" ]]; then
-  PRUNE_VOLUMES_ENABLED=true
-  PRUNE_LABEL="YES"
-elif [[ "$PRUNE_STATE" == "true" ]]; then
-  PRUNE_VOLUMES_ENABLED=false
-  PRUNE_LABEL="IGNORED (requires APPLY)"
-else
-  PRUNE_VOLUMES_ENABLED=false
-  PRUNE_LABEL="NO"
+PRUNE_VOLUMES_ENABLED=false
+PRUNE_LABEL="NO"
+if [[ "$PRUNE_STATE" == "true" ]]; then
+  if [[ "$APPLY_ENABLED" == "true" ]]; then
+    PRUNE_VOLUMES_ENABLED=true
+    PRUNE_LABEL="YES"
+  else
+    PRUNE_LABEL="IGNORED (requires APPLY=true)"
+  fi
 fi
 
-if [[ "$CLEAN_WEB_STATE" == "true" && "$APPLY_ENABLED" == "true" ]]; then
-  CLEAN_WEB_ENABLED=true
-  CLEAN_WEB_LABEL="YES"
-elif [[ "$CLEAN_WEB_STATE" == "true" ]]; then
-  CLEAN_WEB_ENABLED=false
-  CLEAN_WEB_LABEL="IGNORED (requires APPLY)"
-else
-  CLEAN_WEB_ENABLED=false
-  CLEAN_WEB_LABEL="NO"
+CLEAN_WEB_ENABLED=false
+CLEAN_WEB_LABEL="NO"
+if [[ "$CLEAN_WEB_STATE" == "true" ]]; then
+  if [[ "$APPLY_ENABLED" == "true" ]]; then
+    CLEAN_WEB_ENABLED=true
+    CLEAN_WEB_LABEL="YES"
+  else
+    CLEAN_WEB_LABEL="IGNORED (requires APPLY=true)"
+  fi
 fi
 
 echo "=== MODE: [$MODE] === Configuration: Prune Volumes: [$PRUNE_LABEL], Clean Web: [$CLEAN_WEB_LABEL]"
 
 run_cmd() {
-  if [[ "$#" -eq 0 ]]; then
+  local cmd
+  cmd="$*"
+  if [[ -z "$cmd" ]]; then
     log "[WARN] Empty command skipped."
     return 0
   fi
   if [[ "$APPLY_ENABLED" == "true" ]]; then
-    log "[EXEC] $*"
-    eval "$*"
+    log "[EXEC] $cmd"
+    eval "$cmd"
   else
-    log "[DRY] Would run: $*"
+    log "[DRY] Would run: $cmd"
   fi
 }
 
