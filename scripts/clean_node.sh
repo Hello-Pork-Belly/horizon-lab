@@ -87,18 +87,32 @@ echo "=== MODE: [$MODE] === Configuration: Prune Volumes: [$PRUNE_LABEL], Clean 
 run_cmd() {
   local cmd
   local requires_apply="false"
-  if [[ "${1:-}" == "--apply" ]]; then
-    requires_apply="true"
-    shift
-  fi
+  local allow_dry_run="false"
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --apply)
+        requires_apply="true"
+        shift
+        ;;
+      --always)
+        allow_dry_run="true"
+        shift
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
   cmd="$*"
   if [[ -z "$cmd" ]]; then
     log "[WARN] Empty command skipped."
     return 0
   fi
-  if [[ "$requires_apply" == "true" && "$APPLY_ENABLED" != "true" ]]; then
-    log "[DRY] Would run: $cmd"
-    return 0
+  if [[ "$APPLY_ENABLED" != "true" ]]; then
+    if [[ "$requires_apply" == "true" || "$allow_dry_run" != "true" ]]; then
+      log "[DRY] Would run: $cmd"
+      return 0
+    fi
   fi
   log "[EXEC] $cmd"
   eval "$cmd"
@@ -113,14 +127,14 @@ need_root() {
 
 preflight_report() {
   log "=== PREFLIGHT REPORT ==="
-  run_cmd "uname -a || true"
-  run_cmd "lsb_release -a 2>/dev/null || cat /etc/os-release || true"
-  run_cmd "uptime || true"
-  run_cmd "df -hT || true"
-  run_cmd "free -h || true"
-  run_cmd "ip -br a || true"
-  run_cmd "command -v docker >/dev/null 2>&1 && docker ps -a || true"
-  run_cmd "systemctl --no-pager --failed || true"
+  run_cmd --always "uname -a || true"
+  run_cmd --always "lsb_release -a 2>/dev/null || cat /etc/os-release || true"
+  run_cmd --always "uptime || true"
+  run_cmd --always "df -hT || true"
+  run_cmd --always "free -h || true"
+  run_cmd --always "ip -br a || true"
+  run_cmd --always "command -v docker >/dev/null 2>&1 && docker ps -a || true"
+  run_cmd --always "systemctl --no-pager --failed || true"
   log "=== END PREFLIGHT ==="
 }
 
@@ -172,10 +186,10 @@ backup_and_remove_web() {
 
 post_report() {
   log "=== POST REPORT ==="
-  run_cmd "df -hT || true"
-  run_cmd "free -h || true"
-  run_cmd "command -v docker >/dev/null 2>&1 && docker ps -a || true"
-  run_cmd "systemctl --no-pager --failed || true"
+  run_cmd --always "df -hT || true"
+  run_cmd --always "free -h || true"
+  run_cmd --always "command -v docker >/dev/null 2>&1 && docker ps -a || true"
+  run_cmd --always "systemctl --no-pager --failed || true"
   log "=== END POST ==="
 }
 
