@@ -1,6 +1,8 @@
 SHELL := /bin/bash
 
-.PHONY: lint smoke ci
+.PHONY: lint lint-strict smoke ci
+
+lint-strict: lint
 
 lint:
 	bash -c 'shopt -s globstar; shellcheck scripts/**/*.sh'
