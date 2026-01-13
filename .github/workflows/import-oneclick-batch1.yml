@@ -29,18 +29,25 @@ jobs:
           set -euo pipefail
 
           target_dir="${GITHUB_WORKSPACE}/upstream/oneclick"
-          mkdir -p "${target_dir}"
+          src_dir="${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick"
 
-          rsync -a --delete "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick/lib/" "${target_dir}/lib/"
-          rsync -a --delete "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick/modules/web/" "${target_dir}/modules/web/"
-          rsync -a --delete "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick/modules/diagnostics/" "${target_dir}/modules/diagnostics/"
-          rsync -a --delete "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick/tests/" "${target_dir}/tests/"
+          mkdir -p \
+            "${target_dir}" \
+            "${target_dir}/lib" \
+            "${target_dir}/modules/web" \
+            "${target_dir}/modules/diagnostics" \
+            "${target_dir}/tests" \
+            "${target_dir}/tools"
 
-          mkdir -p "${target_dir}/modules" "${target_dir}/tools"
-          cp "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick/hz.sh" "${target_dir}/hz.sh"
-          cp "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick/tools/wp-baseline-verify.sh" "${target_dir}/tools/wp-baseline-verify.sh"
+          rsync -a --delete "${src_dir}/lib/" "${target_dir}/lib/"
+          rsync -a --delete "${src_dir}/modules/web/" "${target_dir}/modules/web/"
+          rsync -a --delete "${src_dir}/modules/diagnostics/" "${target_dir}/modules/diagnostics/"
+          rsync -a --delete "${src_dir}/tests/" "${target_dir}/tests/"
 
-          git -C "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick" rev-parse HEAD > "${target_dir}/UPSTREAM_COMMIT.txt"
+          cp "${src_dir}/hz.sh" "${target_dir}/hz.sh"
+          cp "${src_dir}/tools/wp-baseline-verify.sh" "${target_dir}/tools/wp-baseline-verify.sh"
+
+          git -C "${src_dir}" rev-parse HEAD > "${target_dir}/UPSTREAM_COMMIT.txt"
 
       - name: Create pull request
         uses: peter-evans/create-pull-request@v6
