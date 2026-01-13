@@ -18,7 +18,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Hello-Pork-Belly/hz-oneclick
-          path: /tmp/hz-oneclick
+          path: upstream/_src/hz-oneclick
+          # For private/internal hz-oneclick, set repo secret HZ_ONECLICK_TOKEN (classic PAT w/ read access).
+          # For public repos, github.token fallback is sufficient.
+          token: ${{ secrets.HZ_ONECLICK_TOKEN || github.token }}
 
       - name: Sync batch-1 files
         shell: bash
@@ -28,16 +31,16 @@ jobs:
           target_dir="${GITHUB_WORKSPACE}/upstream/oneclick"
           mkdir -p "${target_dir}"
 
-          rsync -a --delete "/tmp/hz-oneclick/lib/" "${target_dir}/lib/"
-          rsync -a --delete "/tmp/hz-oneclick/modules/web/" "${target_dir}/modules/web/"
-          rsync -a --delete "/tmp/hz-oneclick/modules/diagnostics/" "${target_dir}/modules/diagnostics/"
-          rsync -a --delete "/tmp/hz-oneclick/tests/" "${target_dir}/tests/"
+          rsync -a --delete "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick/lib/" "${target_dir}/lib/"
+          rsync -a --delete "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick/modules/web/" "${target_dir}/modules/web/"
+          rsync -a --delete "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick/modules/diagnostics/" "${target_dir}/modules/diagnostics/"
+          rsync -a --delete "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick/tests/" "${target_dir}/tests/"
 
           mkdir -p "${target_dir}/modules" "${target_dir}/tools"
-          cp "/tmp/hz-oneclick/hz.sh" "${target_dir}/hz.sh"
-          cp "/tmp/hz-oneclick/tools/wp-baseline-verify.sh" "${target_dir}/tools/wp-baseline-verify.sh"
+          cp "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick/hz.sh" "${target_dir}/hz.sh"
+          cp "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick/tools/wp-baseline-verify.sh" "${target_dir}/tools/wp-baseline-verify.sh"
 
-          git -C /tmp/hz-oneclick rev-parse HEAD > "${target_dir}/UPSTREAM_COMMIT.txt"
+          git -C "${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick" rev-parse HEAD > "${target_dir}/UPSTREAM_COMMIT.txt"
 
       - name: Create pull request
         uses: peter-evans/create-pull-request@v6
