@@ -35,35 +35,30 @@ parse_bool() {
 ts() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 log() { echo "[$(ts)] $*"; }
 
+parse_bool_or_default() {
+  local name="$1"
+  local value="$2"
+  local default="$3"
+  local default_label="$4"
+  local state
+
+  state="$(parse_bool "$value")"
+  if [[ "$state" == "unset" ]]; then
+    state="$default"
+  elif [[ "$state" == "invalid" ]]; then
+    log "[WARN] Invalid ${name} value '$value'; defaulting to ${default_label}."
+    state="$default"
+  fi
+  echo "$state"
+}
+
 APPLY_VALUE="${APPLY:-${CLEAN_APPLY:-}}"
 PRUNE_VOLUMES_VALUE="${PRUNE_VOLUMES:-}"
 CLEAN_WEB_VALUE="${CLEAN_WEB:-${CLEAN:-}}"
 
-APPLY_STATE="$(parse_bool "$APPLY_VALUE")"
-PRUNE_STATE="$(parse_bool "$PRUNE_VOLUMES_VALUE")"
-CLEAN_WEB_STATE="$(parse_bool "$CLEAN_WEB_VALUE")"
-
-if [[ "$APPLY_STATE" == "unset" ]]; then
-  APPLY_STATE="false"
-fi
-if [[ "$APPLY_STATE" == "invalid" ]]; then
-  log "[WARN] Invalid APPLY value '$APPLY_VALUE'; defaulting to DRY-RUN."
-  APPLY_STATE="false"
-fi
-if [[ "$PRUNE_STATE" == "unset" ]]; then
-  PRUNE_STATE="false"
-fi
-if [[ "$PRUNE_STATE" == "invalid" ]]; then
-  log "[WARN] Invalid PRUNE_VOLUMES value '$PRUNE_VOLUMES_VALUE'; defaulting to NO."
-  PRUNE_STATE="false"
-fi
-if [[ "$CLEAN_WEB_STATE" == "unset" ]]; then
-  CLEAN_WEB_STATE="false"
-fi
-if [[ "$CLEAN_WEB_STATE" == "invalid" ]]; then
-  log "[WARN] Invalid CLEAN_WEB value '$CLEAN_WEB_VALUE'; defaulting to NO."
-  CLEAN_WEB_STATE="false"
-fi
+APPLY_STATE="$(parse_bool_or_default "APPLY" "$APPLY_VALUE" "false" "DRY-RUN")"
+PRUNE_STATE="$(parse_bool_or_default "PRUNE_VOLUMES" "$PRUNE_VOLUMES_VALUE" "false" "NO")"
+CLEAN_WEB_STATE="$(parse_bool_or_default "CLEAN_WEB" "$CLEAN_WEB_VALUE" "false" "NO")"
 
 if [[ "$APPLY_STATE" == "true" ]]; then
   APPLY_ENABLED=true
@@ -128,9 +123,7 @@ run_cmd() {
     log "[DRY] Would run (requires APPLY=true): $cmd"
     return 0
   fi
-  if [[ "$APPLY_ENABLED" == "true" ]]; then
-    should_exec="true"
-  elif [[ "$allow_dry_run" == "true" && "$requires_apply" != "true" ]]; then
+  if [[ "$APPLY_ENABLED" == "true" || ( "$allow_dry_run" == "true" && "$requires_apply" != "true" ) ]]; then
     should_exec="true"
   fi
   if [[ "$should_exec" != "true" ]]; then
