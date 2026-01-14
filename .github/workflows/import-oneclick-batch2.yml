@@ -1,0 +1,58 @@
+name: Import batch-2 from hz-oneclick
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout horizon-lab
+        uses: actions/checkout@v4
+
+      - name: Checkout hz-oneclick
+        uses: actions/checkout@v4
+        with:
+          repository: Hello-Pork-Belly/hz-oneclick
+          path: upstream/_src/hz-oneclick
+          # For private/internal hz-oneclick, set repo secret HZ_ONECLICK_TOKEN (classic PAT w/ read access).
+          # For public repos, github.token fallback is sufficient.
+          token: ${{ secrets.HZ_ONECLICK_TOKEN || github.token }}
+
+      - name: Sync batch-2 files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          target_dir="${GITHUB_WORKSPACE}/upstream/oneclick"
+          src_dir="${GITHUB_WORKSPACE}/upstream/_src/hz-oneclick"
+
+          mkdir -p \
+            "${target_dir}/modules/security" \
+            "${target_dir}/modules/mail" \
+            "${target_dir}/modules/backup" \
+            "${target_dir}/modules/monitor"
+
+          rsync -a --delete "${src_dir}/modules/security/" "${target_dir}/modules/security/"
+          rsync -a --delete "${src_dir}/modules/mail/"     "${target_dir}/modules/mail/"
+          rsync -a --delete "${src_dir}/modules/backup/"   "${target_dir}/modules/backup/"
+          rsync -a --delete "${src_dir}/modules/monitor/"  "${target_dir}/modules/monitor/"
+
+          git -C "${src_dir}" rev-parse HEAD > "${target_dir}/UPSTREAM_COMMIT.txt"
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: import/batch-2
+          base: main
+          title: "Import batch-2 from hz-oneclick"
+          commit-message: "Import batch-2 from hz-oneclick"
+          body: |
+            ## Summary
+            - Import batch-2 files from hz-oneclick into upstream/oneclick.
+            - Record upstream commit SHA.
+          labels: import
