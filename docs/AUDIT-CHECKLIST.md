@@ -4,6 +4,7 @@ This checklist is used by the auditor to judge every PR.
 
 ## 0) Required Evidence
 See docs/GPT-PROJECT-INSTRUCTIONS.md (SSOT). This checklist must not diverge.
+Versioning/change-history SSOT is docs/VERSIONING.md.
 
 PR must include:
 - Goal summary (1-3 lines)

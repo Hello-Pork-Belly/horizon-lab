@@ -19,6 +19,12 @@ Rationale: diff-only evidence prevents fabricated logs and keeps reviews determi
 | --- | --- | --- | --- |
 | MODE:AUDIT | PR diff only | Executed commands + outputs/logs | Fabricated commands/logs or chat excerpts as evidence |
 
+Versioning & Changelog:
+- SSOT: docs/VERSIONING.md.
+- Do not add per-file “last modified” timestamps.
+- Do not require commands/logs unless truly executed.
+- Never fabricate commands/logs/outputs as evidence.
+
 MODE:AUDIT:
 - Output ONLY: PASS/FAIL + violations/risks + rule citations.
 - NO fixes, NO suggestions, NO commands.

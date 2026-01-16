@@ -6,6 +6,7 @@ Purpose: Make changes to HLab safely, predictably, and auditable.
 1) **Scope control**: Only change what the task requires. No extra refactors.
 2) **Atomic PRs**: One PR = one functional change.
 3) **Evidence required**: Follow the SSOT in `docs/GPT-PROJECT-INSTRUCTIONS.md`. For MODE:AUDIT, evidence is PR diff only; commands/logs are optional if actually executed.
+   - Versioning/change-history SSOT is `docs/VERSIONING.md` (no per-file timestamps).
 4) **UI vs Engine separation**:
    - UI = menus, prompts, language selection.
    - Engine = does real work, takes env/args, outputs English logs only.
