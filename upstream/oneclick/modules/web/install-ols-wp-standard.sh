@@ -5030,6 +5030,14 @@ prompt_remote_redis_info_frontend() {
   echo
   echo "================ LNMP-Lite（Frontend-only；远程 DB/Redis）Redis 配置 ================"
 
+  REMOTE_REDIS_HOST=""
+  REMOTE_REDIS_PORT=""
+  REMOTE_REDIS_PASSWORD=""
+  REMOTE_REDIS_PASSWORD_CONFIRM=""
+  REDIS_HOST=""
+  REDIS_PORT=""
+  REDIS_PASSWORD=""
+
   while :; do
     read -rp "REMOTE Redis Host（例如 100.64.x.x 或 redis.internal）: " REMOTE_REDIS_HOST
     [ -n "$REMOTE_REDIS_HOST" ] && break
@@ -5052,6 +5060,8 @@ prompt_remote_redis_info_frontend() {
   REDIS_HOST="$REMOTE_REDIS_HOST"
   REDIS_PORT="$REMOTE_REDIS_PORT"
   REDIS_PASSWORD="$REMOTE_REDIS_PASSWORD"
+  unset REMOTE_REDIS_PASSWORD_CONFIRM
+  return 0
 }
 
 test_frontend_remote_db_with_retry() {
@@ -5579,6 +5589,7 @@ test_redis_connection_lite() {
   local host="$REDIS_HOST"
   local port="${REDIS_PORT:-6379}"
   local tcp_err=""
+  local tcp_target=""
   local ping_err=""
   local install_choice=""
 
@@ -5608,7 +5619,8 @@ test_redis_connection_lite() {
   fi
 
   log_info "TCP 连通性检测: ${host}:${port}"
-  if ! tcp_err="$(timeout 3 bash -c 'cat < /dev/null > /dev/tcp/$1/$2' _ "$host" "$port" 2>&1 >/dev/null)"; then
+  printf -v tcp_target '/dev/tcp/%s/%s' "$host" "$port"
+  if ! tcp_err="$(timeout 3 bash -c 'cat < /dev/null > "$1"' _ "$tcp_target" 2>&1 >/dev/null)"; then
     log_error "无法连接到 ${host}:${port}（TCP 不可达）。"
     log_warn "可能原因：防火墙/安全组未放行端口、服务未监听、内网或隧道未连接、地址填写错误。"
     [ -n "$tcp_err" ] && log_warn "系统提示: ${tcp_err}"
